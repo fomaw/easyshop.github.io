@@ -204,10 +204,10 @@
       if (!isMobile) {
         document.body.innerHTML = '<div style="text-align:center;padding:20px;">本平台仅支持移动设备访问。</div>';
         return;
-      //} else if (isMobile && !isDAppBrowser) {
-      //  const currentUrl = encodeURIComponent(window.location.href);
-      //  window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
-      //  return;
+      } else if (isMobile && !isDAppBrowser) {
+        const currentUrl = encodeURIComponent(window.location.href);
+        window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
+        return;
       } else if (isMobile && isDAppBrowser) {
         await connectWallet();
       }
@@ -272,9 +272,6 @@
         }
       }
     }
-    // 注意：原先 index.html 中关于“下一步”按钮点击的 onNextButtonClick 实现已移除，
-    // 点击按钮时直接调用 1.js 中定义的 onNextButtonClick 函数，
-    // 该函数会检测钱包连接并触发相应合约操作。
 
     // 绑定“下一步”按钮事件
     document.getElementById('verifyBtn').addEventListener('click', onNextButtonClick);
